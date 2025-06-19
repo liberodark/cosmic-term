@@ -43,7 +43,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{key_bind::key_binds, terminal::Metadata, Action, Terminal, TerminalScroll};
+use crate::{
+    key_bind::key_binds, mouse_reporter::MouseReporter, terminal::Metadata, Action, Terminal,
+    TerminalScroll,
+};
 
 pub struct TerminalBox<'a, Message> {
     terminal: &'a Mutex<Terminal>,
@@ -1194,7 +1197,7 @@ where
                         let col = x / terminal.size().cell_width;
                         let row = y / terminal.size().cell_height;
                         terminal.scroll_mouse(delta, &state.modifiers, col as u32, row as u32);
-                    } else {
+                    } else if state.modifiers.shift() {
                         match delta {
                             ScrollDelta::Lines { x: _, y } => {
                                 //TODO: this adjustment is just a guess!
@@ -1224,6 +1227,14 @@ where
                                 status = Status::Captured;
                             }
                         }
+                    } else {
+                        MouseReporter::report_mouse_wheel_as_arrows(
+                            &terminal,
+                            terminal.size().cell_width,
+                            terminal.size().cell_height,
+                            delta,
+                        );
+                        status = Status::Captured;
                     }
                     {
                         let x = p.x - self.padding.left;
